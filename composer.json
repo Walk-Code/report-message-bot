@@ -1,0 +1,29 @@
+{
+    "name": "lib/report-message-bot",
+    "description": "usually report error message",
+    "keywords": [
+        "redis"
+    ],
+    "type": "library",
+        "require": {
+        "php": ">=7.1",
+        "ext-redis":"*",
+        "myclabs/php-enum": "^1.6.6",
+        "guzzlehttp/guzzle": "^6.5",
+        "ext-mbstring": "*"
+    },
+    "license": "TIM",
+    "autoload": {
+        "psr-4": {
+            "reportMessage\\": "src/reportMessage"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "reportMessageTest\\": "tests/"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.0"
+    }
+}
