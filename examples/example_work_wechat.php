@@ -1,7 +1,7 @@
 <?php
 
+use reportMessage\entity\Message;
 use reportMessage\enum\LogLevelEnum;
-use reportMessage\handle\WorkWechatSender;
 use reportMessage\ReportMessage;
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'vendor/autoload.php';
@@ -19,9 +19,10 @@ $redis->select(0);
 
 $address = [
     'address' => [
-        'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=2e8c48a4-2a70-4a44-b6f7-bf8aa2b35e8e',
-    ],
+        '企业机器人地址',
+    ]
 ];
-ReportMessage::setRedis($redis);
-ReportMessage::setConfig($address);
-$result = ReportMessage::simpleLog($level, '', $test, 'multiple', 1, 5);
+$message = new Message($level, '1', $test, 'multiple', 1, 5);
+ReportMessage::getInstance()->setRedis($redis)
+    ->setConfig($address)
+    ->simpleLog($message);

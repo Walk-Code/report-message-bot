@@ -51,7 +51,6 @@ class WorkWechatSender implements SendHandle
                 $response = $client->request('POST', $address, ['json' => $text, 'verify' => false]);
                 $response->getStatusCode();
             }
-
             return true;
         }
 

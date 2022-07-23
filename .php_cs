@@ -1,21 +1,21 @@
 <?php
-$header = <<<EOF
+
+$header = <<<'EOF'
 This file is part of the report-message package.
 
 @link     https://composer.jianzhikeji.com/
 EOF;
 
-
 return PhpCsFixer\Config::create()
     ->setRiskyAllowed(true)
     ->setRules([
-        '@PSR2'    => true,
-        '@Symfony' => true,
+        '@PSR2'                      => true,
+        '@Symfony'                   => true,
         'array_syntax'               => ['syntax' => 'short'],
         'combine_consecutive_unsets' => true,
         // one should use PHPUnit methods to set up expected exception instead of annotations
-        'general_phpdoc_annotation_remove' => ['expectedException', 'expectedExceptionMessage', 'expectedExceptionMessageRegExp'],
-        'header_comment' => array('header' => $header),
+        'general_phpdoc_annotation_remove'      => ['expectedException', 'expectedExceptionMessage', 'expectedExceptionMessageRegExp'],
+        'header_comment'                        => ['header' => $header],
         'heredoc_to_nowdoc'                     => true,
         'no_extra_consecutive_blank_lines'      => ['break', 'continue', 'extra', 'return', 'throw', 'use', 'parenthesis_brace_block', 'square_brace_block', 'curly_brace_block'],
         'no_unreachable_default_argument_value' => true,
@@ -25,7 +25,7 @@ return PhpCsFixer\Config::create()
         'ordered_imports'                       => true,
         'php_unit_strict'                       => true,
         'phpdoc_add_missing_param_annotation'   => true,
-        'no_trailing_comma_in_singleline_array' => true, //单行数组最后一个元素不添加逗号
+        'no_trailing_comma_in_singleline_array' => true,
         'phpdoc_order'                          => true,
         'psr4'                                  => true,
         'strict_comparison'                     => false,
@@ -36,8 +36,8 @@ return PhpCsFixer\Config::create()
         'no_empty_statement'               => true,
         'simplified_null_return'           => true,
         'no_extra_consecutive_blank_lines' => true,
-        'pre_increment'                    => false, //设置为false，$i++ 不会变成 ++$i
-        'native_function_invocation'       => false, //in_array不会加前缀\
+        'pre_increment'                    => false,
+        'native_function_invocation'       => false,
         'cast_spaces'                      => ['space' => 'single'],
     ])
     ->setFinder(

@@ -13,7 +13,7 @@ class ReportMessageTest extends TestCase
     public function testLogException($level, $key, $traceId, $content, $frequency, $duration)
     {
         $this->expectException(InvalidArgumentException::class);
-        ReportMessage::log($level, $key, $traceId, $content, $frequency, $duration);
+        ReportMessage::getInstance()->log($level, $key, $traceId, $content, $frequency, $duration);
     }
 
     /**
@@ -22,10 +22,10 @@ class ReportMessageTest extends TestCase
      */
     public function testHandleException($level, $key, $traceId, $content, $frequency, $duration)
     {
-        ReportMessage::setErrHandler(function ($e) {
+        ReportMessage::getInstance()->setErrHandler(function ($e) {
             $this->assertInstanceOf(Exception::class, $e);
         });
-        $this->assertFalse(ReportMessage::log($level, $key, $traceId, $content, $frequency, $duration));
+        $this->assertFalse(ReportMessage::getInstance()->log($level, $key, $traceId, $content, $frequency, $duration));
     }
 
     public function testConfig()

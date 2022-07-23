@@ -8,7 +8,18 @@ use reportMessage\handle\SendHandle;
 
 class LogSender
 {
+    /**
+     * cache prefix.
+     *
+     * @var string
+     */
     protected $cachePrefix = 'reportMessage';
+
+    /**
+     * cache log prefix.
+     *
+     * @var string
+     */
     protected $lockKeyPrefix = 'reportMessage_lock';
 
     /**
@@ -39,6 +50,7 @@ class LogSender
 
     /**
      * lock key.
+     *
      * @var string
      */
     protected $lockKey = '';
@@ -60,8 +72,8 @@ class LogSender
     /**
      * Desc: send handler config
      * Date: 2022/7/18
-     * Time: 15:01
-     * @param array $config
+     * Time: 15:01.
+     *
      * @return $this
      */
     public function setHandlerConfig(array $config): LogSender
@@ -74,8 +86,8 @@ class LogSender
     /**
      * Desc: set frequency
      * Date: 2022/7/18
-     * Time: 15:01
-     * @param int $times
+     * Time: 15:01.
+     *
      * @return $this
      */
     public function setFrequency(int $times): LogSender
@@ -88,8 +100,7 @@ class LogSender
     /**
      * Desc: get frequency.
      * Date: 2022/7/18
-     * Time: 15:02
-     * @return int
+     * Time: 15:02.
      */
     public function getFrequency(): int
     {
@@ -99,8 +110,8 @@ class LogSender
     /**
      * Desc: set expire time.
      * Date: 2022/7/18
-     * Time: 15:02
-     * @param int $time
+     * Time: 15:02.
+     *
      * @return $this
      */
     public function setExpire(int $time): LogSender
@@ -113,8 +124,7 @@ class LogSender
     /**
      * Desc: get expire time.
      * Date: 2022/7/18
-     * Time: 15:02
-     * @return int
+     * Time: 15:02.
      */
     public function getExpire(): int
     {
@@ -124,13 +134,15 @@ class LogSender
     /**
      * Desc: set send handler.
      * Date: 2022/7/18
-     * Time: 15:02
+     * Time: 15:02.
+     *
      * @param $handler
+     *
      * @return $this
      */
     public function setHandler($handler): LogSender
     {
-        $this->handler = $handler;
+        $this->handler         = $handler;
         $this->handler->sender = $this;
 
         return $this;
@@ -139,14 +151,14 @@ class LogSender
     /**
      * Desc: set cache key.
      * Date: 2022/7/18
-     * Time: 15:02
-     * @param string $key
+     * Time: 15:02.
+     *
      * @return $this
      */
     public function setCacheKey(string $key): LogSender
     {
         $this->cacheKey = $this->cachePrefix . '_' . $key;
-        $this->lockKey = $this->lockKeyPrefix . '_' . $key;
+        $this->lockKey  = $this->lockKeyPrefix . '_' . $key;
 
         return $this;
     }
@@ -154,16 +166,14 @@ class LogSender
     /**
      * Desc: check frequency.
      * Date: 2022/7/18
-     * Time: 15:04
-     * @return bool
+     * Time: 15:04.
      */
     public function checkFrequency(): bool
     {
-        $key = $this->cacheKey;
-        $oRedis = $this->redis;
-        $isOk = $oRedis->set($key, 1, ['nx', 'ex' => $this->expire]);
+        $key  = $this->cacheKey;
+        $isOk = $this->redis->set($key, 1, ['nx', 'ex' => $this->expire]);
         if (false === $isOk) {
-            $times = $oRedis->incrby($key, 1);
+            $times = $this->redis->incrby($key, 1);
         } else {
             $times = 1;
         }
@@ -175,27 +185,26 @@ class LogSender
     }
 
     /**
-     * Desc: log
+     * Desc: lock
      * Date: 2022/7/18
-     * Time: 15:04
+     * Time: 15:04.
+     *
      * @return bool
      */
     public function lock()
     {
-        $oRedis = $this->redis;
-        $ttl = $oRedis->ttl($this->cacheKey);
+        $ttl = $this->redis->ttl($this->cacheKey);
 
         $ttl = $ttl <= 0 ? 1 : $ttl;
 
-        return $oRedis->set($this->lockKey, 1, ['nx', 'ex' => $ttl]);
+        return $this->redis->set($this->lockKey, 1, ['nx', 'ex' => $ttl]);
     }
 
     /**
      * Desc: send data
      * Date: 2022/7/18
-     * Time: 15:05
-     * @param array $data
-     * @return bool
+     * Time: 15:05.
+     *
      * @throws \Exception
      */
     public function send(array $data): bool

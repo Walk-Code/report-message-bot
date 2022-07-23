@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace reportMessage;
 
+use reportMessage\entity\Message;
 use reportMessage\enum\LogLevelEnum;
 use reportMessage\handle\SendHandle;
 use reportMessage\handle\WorkWechatSender;
@@ -29,12 +30,12 @@ class ReportMessage
      *
      * @var callable|null
      */
-    private static $errHanler;
+    private $errHanler;
 
     /**
      * @var \Redis
      */
-    private static $redis;
+    private $redis;
 
     /**
      * config message.
@@ -44,11 +45,33 @@ class ReportMessage
     private static $config = [];
 
     /**
+     * @var object
+     */
+    private static $instance;
+
+    private function __construct()
+    {
+    }
+
+    private function __clone()
+    {
+    }
+
+    public static function getInstance()
+    {
+        if (empty(self::$instance)) {
+            self::$instance = new self();
+        }
+
+        return self::$instance;
+    }
+
+    /**
      * Desc: Send notification content
      * Date: 2022/7/18
      * Time: 15:09.
      */
-    public static function send(LogLevelEnum $level, string $text, string $key = '', string $traceId = '', int $frequency = 0, int $duration = 0): bool
+    public function send(LogLevelEnum $level, string $text, string $key = '', string $traceId = '', int $frequency = 0, int $duration = 0): bool
     {
         if (empty($key)) {
             $key = 'default';
@@ -64,7 +87,7 @@ class ReportMessage
      *
      * @throws \Throwable
      */
-    public static function log(LogLevelEnum $level, string $key, string $traceId, string $text, int $frequency = 0, int $duration = 0): bool
+    public function log(LogLevelEnum $level, string $key, string $traceId, string $text, int $frequency = 0, int $duration = 0): bool
     {
         try {
             $data = [
@@ -74,10 +97,9 @@ class ReportMessage
                 'text'    => $text,
             ];
 
-            $config = self::config();
+            $config = $this->config();
             $handle = self::switchHandle($config);
-            $redis  = self::$redis;
-            var_dump($data);
+            $redis  = $this->redis;
             if (empty($redis)) {
                 throw new \InvalidArgumentException('redis config error!');
             }
@@ -104,32 +126,31 @@ class ReportMessage
      * Desc: Simple alert
      * Date: 2022/7/18
      * Time: 15:10.
+     * string.
      *
      * @return bool
      */
-    public static function simpleLog(string $title, string $uri, string $msg, string $key, int $frequency = 0, int $duration = 0)
+    public function simpleLog(Message $message)
     {
-        try {
-            $data = [
-                'title' => $title,
-                'uri'   => $uri,
-                'text'  => str_replace('\\', '\\\\', $msg),
-            ];
-            if (empty(self::$redis)) {
-                throw new \InvalidArgumentException('redis配置异常');
-            }
-            $oLogSender = new LogSender(new WorkWechatSender(self::config()), self::$redis);
-            if ($frequency > 0) {
-                $oLogSender->setFrequency($frequency);
-            }
-            if ($duration > 0) {
-                $oLogSender->setExpire($duration);
-            }
-
-            return $oLogSender->setCacheKey($key)->send($data);
-        } catch (\Throwable $e) {
-            //return false;
+        $data = [
+            'title' => $message->getTitle(),
+            'uri'   => $message->getUri(),
+            'text'  => str_replace('\\', '\\\\', $message->getContent()),
+        ];
+        if (empty($this->redis)) {
+            throw new \InvalidArgumentException('redis config error!');
         }
+        $oLogSender = new LogSender(new WorkWechatSender(self::config()), $this->redis);
+        $frequency  = $message->getFrequency();
+        $duration   = $message->getDuration();
+        if ($frequency > 0) {
+            $oLogSender->setFrequency($frequency);
+        }
+        if ($duration > 0) {
+            $oLogSender->setExpire($duration);
+        }
+
+        return $oLogSender->setCacheKey($message->getKey())->send($data);
     }
 
     /**
@@ -137,13 +158,13 @@ class ReportMessage
      * Date: 2022/7/18
      * Time: 15:15.
      */
-    public static function setRedis(\Redis $redis): \Redis
+    public function setRedis(\Redis $redis): ReportMessage
     {
-        if (!self::$redis) {
-            self::$redis = $redis;
+        if (!$this->redis) {
+            $this->redis = $redis;
         }
 
-        return self::$redis;
+        return $this;
     }
 
     /**
@@ -166,9 +187,11 @@ class ReportMessage
      * Date: 2022/7/18
      * Time: 15:15.
      */
-    public static function setConfig(array $config): void
+    public function setConfig(array $config): ReportMessage
     {
         self::$config = $config;
+
+        return $this;
     }
 
     /**
@@ -176,14 +199,14 @@ class ReportMessage
      * Date: 2022/7/18
      * Time: 15:20.
      */
-    public static function config(): array
+    public function config(): array
     {
         if (empty(self::$config)) {
             if (empty(self::$configFile)) {
                 self::$configFile = __DIR__ . '/../../../../.env';
             }
             if (!is_file(self::$configFile)) {
-                throw new \InvalidArgumentException('配置文件读取异常');
+                throw new \InvalidArgumentException('configuration file read exception!');
             }
             $env = new Env();
             $env->load(self::$configFile);
@@ -197,9 +220,9 @@ class ReportMessage
     /**
      * set error handler.
      */
-    public static function setErrHandler(?callable $callable): void
+    public function setErrHandler(?callable $callable): void
     {
-        static::$errHanler = $callable;
+        $this->errHanler = $callable;
     }
 
     /**
@@ -209,10 +232,10 @@ class ReportMessage
      *
      * @throws \Throwable
      */
-    private static function dealError(\Throwable $e): void
+    private function dealError(\Throwable $e): void
     {
-        if (is_callable(static::$errHanler)) {
-            call_user_func(static::$errHanler, $e);
+        if (is_callable($this->errHanler)) {
+            call_user_func($this->errHanler, $e);
         } else {
             throw $e;
         }

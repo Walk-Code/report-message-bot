@@ -11,7 +11,7 @@ php-cs-fixer fix .
 ## 测试
 
 ```bash  
-vendor/bin/phpunit
+./vendor/bin/phpunit ./tests
 ```
 
 
@@ -19,8 +19,8 @@ vendor/bin/phpunit
 
 ```php
 <?php
-use Jianzhi\reportMessage\enum\LogLevel;
-use Jianzhi\reportMessage\ReportMessage;
+use reportMessage\enum\LogLevelEnum;
+use reportMessage\ReportMessage;
 
 ReportMessage::setRedis(tp_redis());
 ReportMessage::send(LogLevel::ERROR(), "发送的错误信息");

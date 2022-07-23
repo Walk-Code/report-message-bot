@@ -9,7 +9,7 @@ use MyCLabs\Enum\Enum;
  *
  * Class LogLevelEnum
  *
- * @method static LogLevelEnum ERROR()
+ * @method static LogLevelEnum   ()
  * @method static LogLevelEnum WARNING()
  * @method static LogLevelEnum NOTICE()
  * @method static LogLevelEnum INFO()

@@ -25,5 +25,8 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^7.0"
+    },
+    "scripts": {
+        "php-cs-fixer": "php-cs-fixer --config=./.php_cs"
     }
 }
