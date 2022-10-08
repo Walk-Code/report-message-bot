@@ -28,5 +28,5 @@ ReportMessage::send(LogLevel::ERROR(), "发送的错误信息");
 
 ## TODO
 
-- [] redis 实现滑动窗口计数
-- [] sendHandle 增加邮件,短信等
+- [x] redis 实现滑动窗口计数
+- [ ] sendHandle 增加邮件,短信等

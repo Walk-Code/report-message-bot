@@ -170,18 +170,33 @@ class LogSender
      */
     public function checkFrequency(): bool
     {
-        $key  = $this->cacheKey;
-        $isOk = $this->redis->set($key, 1, ['nx', 'ex' => $this->expire]);
-        if (false === $isOk) {
-            $times = $this->redis->incrby($key, 1);
-        } else {
-            $times = 1;
-        }
-        if ($times >= $this->frequency) {
-            return true;
-        }
+        $key = $this->cacheKey;
+//        $isOk = $this->redis->set($key, 1, ['nx', 'ex' => $this->expire]);
+//        if (false === $isOk) {
+//            $times = $this->redis->incrby($key, 1);
+//        } else {
+//            $times = 1;
+//        }
+//        if ($times >= $this->frequency) {
+//            return true;
+//        }
 
-        return false;
+        // slidingWindow
+        $maxCallsPerHour = $this->frequency; // 每小时最大调用数
+        $slidingWindow   = $this->expire; // 滑窗大小
+        $now             = microtime(true);
+        $redis        = $this->redis;
+        $redis->multi();
+        $redis->zRangeByScore($key, (string)0, (string)($now - $slidingWindow));
+        $redis->zRange($key, 0, -1);
+        $redis->zAdd($key, $now, $now);
+        $redis->expire($key, $slidingWindow);
+        $result = $redis->exec();
+        $redis->close();
+        $timeStamps = $result[1];
+        $remaining  = max(0, $maxCallsPerHour - count($timeStamps));
+
+        return $remaining > 0;
     }
 
     /**
@@ -213,7 +228,7 @@ class LogSender
             throw new \Exception('sender not defined');
         }
 
-        if ($this->checkFrequency() && $this->lock()) {
+        if ($this->checkFrequency()) {
             return $this->handler->send($data);
         }
 
