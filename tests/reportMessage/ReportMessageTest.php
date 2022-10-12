@@ -1,67 +1,21 @@
 <?php
+namespace reportMessageTest\reportMessage;
 
-use PHPUnit\Framework\TestCase;
-use reportMessage\enum\LogLevelEnum;
 use reportMessage\ReportMessage;
+use reportMessageTest\reportMessage\BaseTestCase;
 
-class ReportMessageTest extends TestCase
+class ReportMessageTest extends BaseTestCase
 {
-    /**
-     * @dataProvider additionProvider
-     * @throws Throwable
-     */
-    public function testLogException($level, $key, $traceId, $content, $frequency, $duration)
+    public function tset_get_instance()
     {
-        $this->expectException(InvalidArgumentException::class);
-        ReportMessage::getInstance()->log($level, $key, $traceId, $content, $frequency, $duration);
+        $obj = ReportMessage::getInstance();
+        $this->assertInstanceOf(ReportMessage::class, $obj);
     }
 
-    /**
-     * @dataProvider additionProviderByError
-     * @throws Throwable
-     */
-    public function testHandleException($level, $key, $traceId, $content, $frequency, $duration)
+    public function test_set_redis()
     {
-        ReportMessage::getInstance()->setErrHandler(function ($e) {
-            $this->assertInstanceOf(Exception::class, $e);
-        });
-        $this->assertFalse(ReportMessage::getInstance()->log($level, $key, $traceId, $content, $frequency, $duration));
-    }
-
-    public function testConfig()
-    {
-        ReportMessage::$configFile = __DIR__ . DIRECTORY_SEPARATOR . '.env';
-        $config                    = ReportMessage::config();
-        $this->assertIsArray($config);
-        $this->assertSame($config['aa'], 'abc');
-    }
-
-    public function additionProvider(): array
-    {
-        $level     = LogLevelEnum::ERROR();
-        $key       = '111';
-        $traceId   = '123456';
-        $text      = '测试日志';
-        $frequency = 12;
-        $duration  = 60;
-
-        return [
-            [$level, $key, $traceId, $text, $frequency, $duration],
-        ];
-    }
-
-    public function additionProviderByError(): array
-    {
-        $level     = LogLevelEnum::ERROR();
-        $key       = '111';
-        $traceId   = '123456';
-        $text      = '测试日志';
-        $frequency = 12;
-        $duration  = 60;
-
-        return [
-            [$level, $key, $traceId, $text, 0, $duration],
-            [$level, $key, $traceId, $text, $frequency, 0],
-        ];
+        $redis = new \Redis();
+        $obj = ReportMessage::getInstance()->setRedis($redis);
+        $this->assertInstanceOf(ReportMessage::class, $obj);
     }
 }

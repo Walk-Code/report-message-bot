@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the order-message package.
+ */
+
 namespace reportMessage;
 
 /**
@@ -16,11 +20,6 @@ class Env
      */
     protected $data = [];
 
-    public function __construct()
-    {
-        $this->data = $_ENV;
-    }
-
     /**
      * load env content.
      */
@@ -33,10 +32,10 @@ class Env
     /**
      * set env content.
      *
-     * @param string|array $env
+     * @param array $env
      * @param mixed        $value
      */
-    public function set($env): void
+    public function set(array $env): void
     {
         $this->data = $env;
     }

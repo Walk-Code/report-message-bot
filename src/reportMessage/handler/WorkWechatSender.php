@@ -1,61 +1,51 @@
 <?php
 
-namespace reportMessage\handle;
+declare(strict_types=1);
+
+/*
+ * This file is part of the order-message package.
+ */
+
+namespace reportMessage\handler;
 
 use GuzzleHttp\Client;
-use reportMessage\LogSender;
 
 /**
  * Class WorkWechatSender.
  *
  * @see https://developer.work.weixin.qq.com/document/path/91770#%E6%B6%88%E6%81%AF%E5%8F%91%E9%80%81%E9%A2%91%E7%8E%87%E9%99%90%E5%88%B6
  */
-class WorkWechatSender implements SendHandle
+class WorkWechatSender implements ISendHandler
 {
-    /**
-     * Log sender.
-     *
-     * @var LogSender
-     */
-    public $sender;
-
     /**
      * config.
      *
      * @var array
      */
     public $config = [
-        'address' => '',
+        'work_wechat_bot' => [
+            'bot_url' => '',
+            'bot_key' => '',
+        ],
     ];
-
-    public function __construct($config = [])
-    {
-        if (!empty($this->config)) {
-            $this->config = $config;
-        }
-    }
 
     /**
      * Desc: send data
      * Date: 2022/7/18
      * Time: 14:49.
+     * @param  array                                 $data
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @return bool
      */
     public function send(array $data): bool
     {
-        $text = $this->formatMessage($data['title'] ?? '', $data['uri'] ?? '', $data['traceId'] ?? '', $data['text'] ?? '', $data['level'] ?? 'warning');
+        $text = $this->formatMessage($data['title'] ?? '', $data['uri'] ?? '', $data['traceId'] ?? '',
+            $data['content'] ?? '', $data['level'] ?? 'warning');
 
-        $client = new Client();
-
-        if (is_array($this->config['address'])) {
-            foreach ($this->config['address'] as $address) {
-                $response = $client->request('POST', $address, ['json' => $text, 'verify' => false]);
-                $response->getStatusCode();
-            }
-            return true;
-        }
-
-        $response = $client->request('POST', $this->config['address'], ['json' => $text, 'verify' => false]);
-        $status   = $response->getStatusCode();
+        $client     = new Client();
+        $botAddress = $this->config['work_wechat_bot']['bot_url'] . '?key=' . $this->config['work_wechat_bot']['bot_key'];
+        $response   = $client->request('POST', $botAddress, ['json' => $text, 'verify' => false]);
+        $status     = $response->getStatusCode();
         if (200 == $status) {
             return true;
         }
@@ -67,8 +57,10 @@ class WorkWechatSender implements SendHandle
      * Desc: set send config.
      * Date: 2022/7/18
      * Time: 14:48.
+     * @param  array       $config
+     * @return ISendHandler
      */
-    public function setConfig(array $config): SendHandle
+    public function setConfig(array $config): ISendHandler
     {
         $this->config = array_replace_recursive($this->config, $config);
 
@@ -79,13 +71,16 @@ class WorkWechatSender implements SendHandle
      * Desc: format message.
      * Date: 2022/7/18
      * Time: 14:52.
-     *
-     * @param string $url
+     * @param  string $title
+     * @param  string $uri
+     * @param  string $traceId
+     * @param  string $content
+     * @param  string $level
+     * @return array
      */
     private function formatMessage(string $title, string $uri, string $traceId, string $content, string $level): array
-    {
-        $title = empty($title) ? 'Dear~ 系统监控到【平台】在' . $this->sender->getExpire() . '秒内代码错误超过' . $this->sender->getFrequency() . '次，请尽快修复' : $title;
-
+    {   //  'Dear~ 系统监控到【平台】在' . $this->sender->getExpire() . '秒内代码错误超过' . $this->sender->getFrequency() . '次，请尽快修复'
+        //$title = empty($title) ? : $title;
         $arrLine = [
             ['content' => '### ' . $title],
             ['title' => '> level：', 'content' => $level, 'color' => 'warning'],
