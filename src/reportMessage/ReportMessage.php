@@ -2,47 +2,35 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the order-message package.
+ */
+
 namespace reportMessage;
 
-use reportMessage\entity\Message;
-use reportMessage\enum\LogLevelEnum;
-use reportMessage\handle\SendHandle;
-use reportMessage\handle\WorkWechatSender;
+use reportMessage\exceptions\InvaildRedisConfig;
+use reportMessage\handler\ISendHandler;
 
 class ReportMessage
 {
     /**
-     * default env file.
-     *L.
+     * Turn on frequency control.
      *
-     * @var string
+     * @var bool
      */
-    public static $configFile = '';
+    private $isUseRate = false;
 
     /**
-     * send handle.
+     * Intercept send messages lock.
      *
-     * @var SendHandle
+     * @var bool
      */
-    protected static $handle;
-    /**
-     * custom error handler.
-     *
-     * @var callable|null
-     */
-    private $errHanler;
+    private $isLock;
 
     /**
      * @var \Redis
      */
     private $redis;
-
-    /**
-     * config message.
-     *
-     * @var array
-     */
-    private static $config = [];
 
     /**
      * @var object
@@ -67,177 +55,68 @@ class ReportMessage
     }
 
     /**
-     * Desc: Send notification content
-     * Date: 2022/7/18
-     * Time: 15:09.
+     * set Redis drive.
      */
-    public function send(LogLevelEnum $level, string $text, string $key = '', string $traceId = '', int $frequency = 0, int $duration = 0): bool
+    public function setRedis(\Redis $redis): self
     {
-        if (empty($key)) {
-            $key = 'default';
-        }
-
-        return self::log($level, $key, $traceId, $text, $frequency, $duration);
-    }
-
-    /**
-     * Desc: log
-     * Date: 2022/7/18
-     * Time: 15:09.
-     *
-     * @throws \Throwable
-     */
-    public function log(LogLevelEnum $level, string $key, string $traceId, string $text, int $frequency = 0, int $duration = 0): bool
-    {
-        try {
-            $data = [
-                'level'   => $level->getValue(),
-                'uri'     => $_SERVER['REQUEST_URI'] ?? '',
-                'traceId' => $traceId,
-                'text'    => $text,
-            ];
-
-            $config = $this->config();
-            $handle = self::switchHandle($config);
-            $redis  = $this->redis;
-            if (empty($redis)) {
-                throw new \InvalidArgumentException('redis config error!');
-            }
-
-            $oLogSender = new LogSender($handle, $redis);
-            $oLogSender->setHandlerConfig($config);
-
-            if ($frequency > 0) {
-                $oLogSender->setFrequency($frequency);
-            }
-            if ($duration > 0) {
-                $oLogSender->setExpire($duration);
-            }
-
-            return $oLogSender->setCacheKey($key)->send($data);
-        } catch (\Throwable $e) {
-            static::dealError($e);
-
-            return false;
-        }
-    }
-
-    /**
-     * Desc: Simple alert
-     * Date: 2022/7/18
-     * Time: 15:10.
-     * string.
-     *
-     * @return bool
-     */
-    public function simpleLog(Message $message)
-    {
-        $data = [
-            'title' => $message->getTitle(),
-            'uri'   => $message->getUri(),
-            'text'  => str_replace('\\', '\\\\', $message->getContent()),
-        ];
-        if (empty($this->redis)) {
-            throw new \InvalidArgumentException('redis config error!');
-        }
-        $oLogSender = new LogSender(new WorkWechatSender(self::config()), $this->redis);
-        $frequency  = $message->getFrequency();
-        $duration   = $message->getDuration();
-        if ($frequency > 0) {
-            $oLogSender->setFrequency($frequency);
-        }
-        if ($duration > 0) {
-            $oLogSender->setExpire($duration);
-        }
-
-        return $oLogSender->setCacheKey($message->getKey())->send($data);
-    }
-
-    /**
-     * Desc: set redis.
-     * Date: 2022/7/18
-     * Time: 15:15.
-     */
-    public function setRedis(\Redis $redis): ReportMessage
-    {
-        if (!$this->redis) {
-            $this->redis = $redis;
-        }
+        $this->redis = $redis;
 
         return $this;
     }
 
     /**
-     * Desc: switch handle.
-     * Date: 2022/7/18
-     * Time: 15:15.
+     * send message.
      */
-    public static function switchHandle(array $config): SendHandle
+    public function sendMessage(ISendHandler $sendHandle, array $data): bool
     {
-        if (!self::$handle) {
-            $handle       = $config['handler'] ?? WorkWechatSender::class;
-            self::$handle = new $handle();
+        $sendHandle->setConfig((new Config())->getData());
+
+        if ($this->isUseRate && !$this->isLock) {
+            return $sendHandle->send($data);
         }
 
-        return self::$handle;
+        return $sendHandle->send($data);
     }
 
     /**
-     * Desc: set config.
-     * Date: 2022/7/18
-     * Time: 15:15.
+     * set rate config.
+     *
+     * @param $key
+     * @param $frequency
+     * @param $duration
+     *
+     * @throws InvaildRedisConfig
+     *
+     * @return $this
      */
-    public function setConfig(array $config): ReportMessage
+    public function setFrequency($key, $frequency, $duration): self
     {
-        self::$config = $config;
+        $this->isUseRate = true;
+        $maxCallsPerHour = $frequency; // 每小时最大调用数
+        $slidingWindow   = $duration; // 滑窗大小
+        $now             = microtime(true);
+        $redis           = $this->redis;
+
+        if (is_null($this->redis)) {
+            throw new InvaildRedisConfig('Invalid redis config!');
+        }
+
+        if (count($redis->zRange($key, 0, -1)) >= $maxCallsPerHour) {
+            $this->isLock = false;
+            return $this;
+        }
+
+        $redis->multi();
+        $redis->zRangeByScore($key, (string) 0, (string) ($now - $slidingWindow));
+        $redis->zRange($key, 0, -1);
+        $redis->zAdd($key, $now, $now);
+        $redis->expire($key, $slidingWindow);
+        $result = $redis->exec();
+        $redis->close();
+        $timeStamps   = $result[1];
+        $remaining    = max(0, $maxCallsPerHour - count($timeStamps));
+        $this->isLock = $remaining > 0;
 
         return $this;
-    }
-
-    /**
-     * Desc: get config.
-     * Date: 2022/7/18
-     * Time: 15:20.
-     */
-    public function config(): array
-    {
-        if (empty(self::$config)) {
-            if (empty(self::$configFile)) {
-                self::$configFile = __DIR__ . '/../../../../.env';
-            }
-            if (!is_file(self::$configFile)) {
-                throw new \InvalidArgumentException('configuration file read exception!');
-            }
-            $env = new Env();
-            $env->load(self::$configFile);
-            $config       = $env->get();
-            self::$config = $config['report-message'] ?? [];
-        }
-
-        return self::$config;
-    }
-
-    /**
-     * set error handler.
-     */
-    public function setErrHandler(?callable $callable): void
-    {
-        $this->errHanler = $callable;
-    }
-
-    /**
-     * Desc: deal Error
-     * Date: 2022/7/18
-     * Time: 15:21.
-     *
-     * @throws \Throwable
-     */
-    private function dealError(\Throwable $e): void
-    {
-        if (is_callable($this->errHanler)) {
-            call_user_func($this->errHanler, $e);
-        } else {
-            throw $e;
-        }
     }
 }
