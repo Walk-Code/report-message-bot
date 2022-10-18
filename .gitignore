@@ -6,3 +6,6 @@ composer.lock
 .DS_Store
 /examples/.env
 .env
+/data/
+/docker/.env
+/docker/redis/data

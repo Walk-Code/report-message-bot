@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * This file is part of the order-message package.
+ * This file is part of the report-message-bot package.
  */
 
 namespace reportMessage;
@@ -103,6 +103,7 @@ class ReportMessage
 
         if (count($redis->zRange($key, 0, -1)) >= $maxCallsPerHour) {
             $this->isLock = false;
+
             return $this;
         }
 

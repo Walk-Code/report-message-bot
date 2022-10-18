@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * This file is part of the order-message package.
+ * This file is part of the report-message-bot package.
  */
 
 namespace reportMessage\handler;
@@ -22,7 +22,7 @@ class WorkWechatSender implements ISendHandler
      *
      * @var array
      */
-    public $config = [
+    protected $config = [
         'work_wechat_bot' => [
             'bot_url' => '',
             'bot_key' => '',
@@ -57,7 +57,7 @@ class WorkWechatSender implements ISendHandler
      * Desc: set send config.
      * Date: 2022/7/18
      * Time: 14:48.
-     * @param  array       $config
+     * @param  array        $config
      * @return ISendHandler
      */
     public function setConfig(array $config): ISendHandler
@@ -65,6 +65,15 @@ class WorkWechatSender implements ISendHandler
         $this->config = array_replace_recursive($this->config, $config);
 
         return $this;
+    }
+
+    /**
+     * Get config.
+     * @return array
+     */
+    public function config(): array
+    {
+        return $this->config;
     }
 
     /**

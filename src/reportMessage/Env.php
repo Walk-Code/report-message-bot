@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * This file is part of the order-message package.
+ * This file is part of the report-message-bot package.
  */
 
 namespace reportMessage;
@@ -33,7 +33,7 @@ class Env
      * set env content.
      *
      * @param array $env
-     * @param mixed        $value
+     * @param mixed $value
      */
     public function set(array $env): void
     {
