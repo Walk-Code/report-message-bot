@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * This file is part of the order-message package.
+ * This file is part of the report-message-bot package.
  */
 
 namespace reportMessage\handler;
@@ -13,13 +13,13 @@ use PHPMailer\PHPMailer\PHPMailer;
 abstract class EmailSender implements ISendHandler
 {
     // mail server config
-    private $config = [
+    protected $config = [
         'mail' => [
             'type'     => '',
             'host'     => '',
             'is_auth'  => true,
             'username' => '',
-            'passwrod' => '',
+            'password' => '',
             'tls'      => PHPMailer::ENCRYPTION_SMTPS,
             'port'     => 465,
         ],
@@ -31,8 +31,8 @@ abstract class EmailSender implements ISendHandler
         try {
             $this->setSetting($mail);
             // Recipients
-//            $mail->setFrom('312430881@qq.com', 'Mailer');
-//            $mail->addAddress('walk_code@163.com', 'Joe User');
+//            $mail->setFrom('test@qq.com', 'Mailer');
+//            $mail->addAddress('test1@163.com', 'Joe User');
 //            $mail->addAddress('@example.com');
 //            $mail->addReplyTo('info@example.com', 'Infomation');
             // $mail->addBCC();
@@ -66,21 +66,56 @@ abstract class EmailSender implements ISendHandler
 
     /**
      * set recipients.
+     * @param  PHPMailer $mailer
+     * @return PHPMailer
      */
     abstract public function setRecipients(PHPMailer $mailer): PHPMailer;
 
     /**
      * set attachments.
+     * @param  PHPMailer $mailer
+     * @return PHPMailer
      */
     abstract public function setAttachments(PHPMailer $mailer): PHPMailer;
 
     /**
      * set content.
+     * @param  PHPMailer $mailer
+     * @return PHPMailer
      */
     abstract public function setContent(PHPMailer $mailer): PHPMailer;
 
     /**
+     * get recipients.
+     * @return PHPMailer
+     */
+    public function getRecipients(): PHPMailer
+    {
+        return $this->setRecipients(new PHPMailer());
+    }
+
+    /**
+     * set attachments.
+     * @return PHPMailer
+     */
+    public function getAttachments(): PHPMailer
+    {
+        return $this->setAttachments(new PHPMailer());
+    }
+
+    /**
+     * set content.
+     * @return PHPMailer
+     */
+    public function getContent(): PHPMailer
+    {
+        return $this->setContent(new PHPMailer());
+    }
+
+    /**
      * mail server setting.
+     * @param  PHPMailer $mail
+     * @return PHPMailer
      */
     private function setSetting(PHPMailer $mail): PHPMailer
     {
@@ -93,7 +128,7 @@ abstract class EmailSender implements ISendHandler
         }
         $mail->SMTPAuth   = $config['is_auth'];
         $mail->Username   = $config['username'];
-        $mail->Password   = $config['passwrod'];
+        $mail->Password   = $config['password'];
         $mail->SMTPSecure = $config['tls'];
         $mail->Port       = $config['port'];
 

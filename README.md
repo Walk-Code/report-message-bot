@@ -2,6 +2,11 @@
 
 发送信息(日志等)到指定平台(企业微信等)
 
+## PHP version
+```
+>= php 7.3
+```
+
 ## 代码格式化(需自行安装 php-cs-fixer)
 
 ```bash  
@@ -9,17 +14,19 @@
 ```
 
 ## 测试
-
-```bash  
+### docker 配置
+[.env.example](docker/.env.example)
+```bash 
+docker-compose -f docker/docker-compose.yaml up -d
+docker exec -it bot_php sh
+cd app 
 ./vendor/bin/phpunit ./tests
 ```
 
-## ENV
-### ENV config
-```
-see .env.example
-```
-### Field Description
+## 环境变量
+### 环境变量配置
+[.env.example](.env.example)
+### 字段描述
 | Filed | Decription |
 | :--- | ----: |
 | work_wechat_bot | 企业微信机器人配置 |
@@ -43,4 +50,4 @@ see .env.example
 - [x] 接入企业微信bot
 - [x] redis 实现滑动窗口计数
 - [x] sendHandle 增加邮件
-- [ ] 单元测试
+- [x] 单元测试

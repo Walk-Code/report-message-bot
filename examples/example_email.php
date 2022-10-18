@@ -18,8 +18,8 @@ class CustomEmail extends \reportMessage\handler\EmailSender
 {
     public function setRecipients(PHPMailer $mailer): PHPMailer
     {
-        $mailer->setFrom('312430881@qq.com', 'Mailer');
-        $mailer->addAddress('walk_code@163.com', 'Joe User');
+        $mailer->setFrom('test@qq.com', 'Mailer');
+        $mailer->addAddress('test_1@163.com', 'Joe User');
 //        $mailer->addAddress('@example.com');
 //        $mailer->addReplyTo('info@example.com', 'Infomation');
 //        $mailer->addBCC();
